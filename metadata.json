@@ -1,0 +1,6 @@
+{
+  "name": "Kajaki na Luzie – Spływy Doliną Liwca",
+  "description": "Kajaki na Luzie — spływy kajakowe i SUP doliną Liwca. Świetny sprzęt, dobra atmosfera. Tel: 880 458 419.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
