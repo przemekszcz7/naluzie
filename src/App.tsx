@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Phone,
   Mail,
@@ -21,20 +21,20 @@ const HERO_BG = 'https://i.postimg.cc/9fdtpWFg/527758207-701097419578376-5482362
 // Exact 13 photos as specified, captions removed
 const GALLERY_PHOTOS = [
   // First 7 visible
-  { id: 'nVgjCyn9', url: 'https://i.postimg.cc/nVgjCyn9/1.jpg', alt: 'Spływ kajakowy Doliną Liwca' },
-  { id: '44q7mDXy', url: 'https://i.postimg.cc/44q7mDXy/2.jpg', alt: 'Deski SUP na rzece Liwiec' },
-  { id: '1R2nfkyq', url: 'https://i.postimg.cc/1R2nfkyq/3.jpg', alt: 'Dolina Liwca - dzika przyroda' },
-  { id: 'kMz6B07t', url: 'https://i.postimg.cc/kMz6B07t/4.jpg', alt: 'Kajaki na Luzie - ekipa na spływie' },
-  { id: 'dQpkLbJC', url: 'https://i.postimg.cc/dQpkLbJC/5.jpg', alt: 'Spływy kajakowe u Kuby' },
-  { id: 'qBShzPpy', url: 'https://i.postimg.cc/qBShzPpy/6.jpg', alt: 'Wypożyczalnia sprzętu kajakowego i SUP' },
-  { id: 'KvTKL0YR', url: 'https://i.postimg.cc/KvTKL0YR/7.jpg', alt: 'Kajaki na meandrującym Liwcu' },
+  { id: 'nVgjCyn9', rawUrl: 'https://i.postimg.cc/nVgjCyn9/1.jpg', alt: 'Spływ kajakowy Doliną Liwca' },
+  { id: '44q7mDXy', rawUrl: 'https://i.postimg.cc/44q7mDXy/2.jpg', alt: 'Deski SUP na rzece Liwiec' },
+  { id: '1R2nfkyq', rawUrl: 'https://i.postimg.cc/1R2nfkyq/3.jpg', alt: 'Dolina Liwca - dzika przyroda' },
+  { id: 'kMz6B07t', rawUrl: 'https://i.postimg.cc/kMz6B07t/4.jpg', alt: 'Kajaki na Luzie - ekipa na spływie' },
+  { id: 'dQpkLbJC', rawUrl: 'https://i.postimg.cc/dQpkLbJC/5.jpg', alt: 'Spływy kajakowe u Kuby' },
+  { id: 'qBShzPpy', rawUrl: 'https://i.postimg.cc/qBShzPpy/6.jpg', alt: 'Wypożyczalnia sprzętu kajakowego i SUP' },
+  { id: 'KvTKL0YR', rawUrl: 'https://i.postimg.cc/KvTKL0YR/7.jpg', alt: 'Kajaki na meandrującym Liwcu' },
   // Hidden 6
-  { id: 'CMXBz3wb', url: 'https://i.postimg.cc/CMXBz3wb/8.jpg', alt: 'Relaks na desce SUP' },
-  { id: 'L6PqfxsY', url: 'https://i.postimg.cc/L6PqfxsY/9.jpg', alt: 'Przystań kajakowa u Kuby' },
-  { id: 'YqF4gdSj', url: 'https://i.postimg.cc/YqF4gdSj/10.jpg', alt: 'Letni spływ kajakowy z przyjaciółmi' },
-  { id: 'yYRJ9LNx', url: 'https://i.postimg.cc/yYRJ9LNx/11.jpg', alt: 'Kajaki 2-osobowe w Dolinie Liwca' },
-  { id: '7YzC7KL2', url: 'https://i.postimg.cc/7YzC7KL2/12.jpg', alt: 'Wypoczynek po spływie u Kuby' },
-  { id: 'WbZDr54J', url: 'https://i.postimg.cc/WbZDr54J/13.jpg', alt: 'Zawsze z nami - Kajaki na Luzie' }
+  { id: 'CMXBz3wb', rawUrl: 'https://i.postimg.cc/CMXBz3wb/8.jpg', alt: 'Relaks na desce SUP' },
+  { id: 'L6PqfxsY', rawUrl: 'https://i.postimg.cc/L6PqfxsY/9.jpg', alt: 'Przystań kajakowa u Kuby' },
+  { id: 'YqF4gdSj', rawUrl: 'https://i.postimg.cc/YqF4gdSj/10.jpg', alt: 'Letni spływ kajakowy z przyjaciółmi' },
+  { id: 'yYRJ9LNx', rawUrl: 'https://i.postimg.cc/yYRJ9LNx/11.jpg', alt: 'Kajaki 2-osobowe w Dolinie Liwca' },
+  { id: '7YzC7KL2', rawUrl: 'https://i.postimg.cc/7YzC7KL2/12.jpg', alt: 'Wypoczynek po spływie u Kuby' },
+  { id: 'WbZDr54J', rawUrl: 'https://i.postimg.cc/WbZDr54J/13.jpg', alt: 'Zawsze z nami - Kajaki na Luzie' }
 ];
 
 const REVIEWS = [
@@ -58,10 +58,64 @@ const REVIEWS = [
   }
 ];
 
+// High-speed progressive image component with smooth fade-in and instant skeleton
+interface GalleryThumbnailProps {
+  key?: string | number;
+  rawUrl: string;
+  alt: string;
+  priority?: boolean;
+  onClick: () => void;
+}
+
+function GalleryThumbnail({
+  rawUrl,
+  alt,
+  priority = false,
+  onClick
+}: GalleryThumbnailProps) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div
+      className="gallery-card group relative overflow-hidden rounded-xl sm:rounded-2xl border border-[#E0E2ED] bg-[#E4E7F5]/70 shadow-2xs hover:shadow-md transition-shadow cursor-pointer aspect-[4/3]"
+      onClick={onClick}
+    >
+      {/* Skeleton Shimmer Background */}
+      {!loaded && (
+        <div className="absolute inset-0 bg-gradient-to-r from-[#E4E7F5] via-[#FDFFFC]/40 to-[#E4E7F5] animate-pulse" />
+      )}
+
+      <img
+        src={rawUrl}
+        alt={alt}
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        }`}
+        referrerPolicy="no-referrer"
+      />
+    </div>
+  );
+}
+
 export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [galleryExpanded, setGalleryExpanded] = useState(false);
   const [activePhoto, setActivePhoto] = useState<typeof GALLERY_PHOTOS[0] | null>(null);
+
+  // Ensure favicon is dynamically set and applied
+  useEffect(() => {
+    let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.getElementsByTagName('head')[0].appendChild(link);
+    }
+    link.type = 'image/jpeg';
+    link.href = LOGO_URL;
+  }, []);
 
   const visiblePhotos = galleryExpanded ? GALLERY_PHOTOS : GALLERY_PHOTOS.slice(0, 7);
 
@@ -513,23 +567,16 @@ export default function App() {
           </p>
         </div>
 
-        {/* Gallery Grid (No Captions, Fast Async Image Loading, Fixed Aspect Ratio) */}
+        {/* Gallery Grid (Fast CDN WebP Thumbnails with Skeleton Shimmer) */}
         <div className="gallery-grid">
           {visiblePhotos.map((photo, index) => (
-            <div
+            <GalleryThumbnail
               key={photo.id}
-              className="gallery-card group relative overflow-hidden rounded-xl sm:rounded-2xl border border-[#E0E2ED] bg-[#E4E7F5] shadow-2xs hover:shadow-md transition-shadow cursor-pointer aspect-[4/3]"
+              rawUrl={photo.rawUrl}
+              alt={photo.alt}
+              priority={index < 4}
               onClick={() => setActivePhoto(photo)}
-            >
-              <img
-                src={photo.url}
-                alt={photo.alt}
-                loading={index < 4 ? 'eager' : 'lazy'}
-                decoding="async"
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                referrerPolicy="no-referrer"
-              />
-            </div>
+            />
           ))}
         </div>
 
@@ -555,7 +602,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* Lightbox Modal (Clean View without Captions) */}
+      {/* Lightbox Modal (Optimized WebP Image) */}
       {activePhoto && (
         <div
           id="photo-lightbox-modal"
@@ -577,7 +624,7 @@ export default function App() {
 
             <div className="flex items-center justify-center max-h-[80vh] min-h-[260px] overflow-hidden bg-[#181E30]">
               <img
-                src={activePhoto.url}
+                src={activePhoto.rawUrl}
                 alt={activePhoto.alt}
                 decoding="async"
                 className="max-h-[80vh] w-auto max-w-full object-contain"
@@ -595,7 +642,7 @@ export default function App() {
         <div className="h-[1px] w-12 sm:w-28 bg-[#E0E2ED] shrink-0"></div>
       </div>
 
-      {/* Opinie (Reviews) Section — Star Ratings Removed as Requested */}
+      {/* Opinie (Reviews) Section */}
       <section id="opinie" className="py-12 sm:py-18 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
           <span className="text-[#202C76] font-extrabold text-xs sm:text-sm uppercase tracking-wider bg-[#E4E7F5] px-2.5 py-1 rounded-md">
@@ -609,7 +656,7 @@ export default function App() {
           </p>
         </div>
 
-        {/* 3 Exactly Given Reviews (Without Star Ratings) */}
+        {/* 3 Reviews */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-7">
           {REVIEWS.map((review) => (
             <div
@@ -617,7 +664,6 @@ export default function App() {
               className="bg-[#FDFFFC] rounded-xl sm:rounded-2xl p-5 sm:p-7 border border-[#E0E2ED] shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between"
             >
               <div>
-                {/* Review Text */}
                 <p className="text-[#181E30] text-sm sm:text-base md:text-lg font-medium leading-relaxed italic mb-5">
                   &ldquo;{review.text}&rdquo;
                 </p>
